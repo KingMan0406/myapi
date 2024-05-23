@@ -12,8 +12,6 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(bodyParser.json());
 
-const DATA_FILE = path.join(__dirname, 'data.json');
-
 // Set up AWS S3
 const s3 = new AWS.S3({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -23,6 +21,13 @@ const s3 = new AWS.S3({
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
+
+const DATA_FILE = path.join(__dirname, 'data.json');
+
+// Ensure DATA_FILE exists
+if (!fs.existsSync(DATA_FILE)) {
+    fs.writeFileSync(DATA_FILE, JSON.stringify([]));
+}
 
 app.get('/api/products', (req, res) => {
     fs.readFile(DATA_FILE, (err, data) => {
@@ -40,8 +45,13 @@ app.post('/api/products', upload.single('image'), (req, res) => {
             return res.status(500).json({ message: 'Error reading data' });
         }
         const products = JSON.parse(data);
-        const newProduct = req.body;
-        newProduct.id = products.length ? products[products.length - 1].id + 1 : 1;
+        const newProduct = {
+            id: products.length ? products[products.length - 1].id + 1 : 1,
+            title: req.body.title,
+            price: parseFloat(req.body.price),
+            description: req.body.description,
+            count: parseInt(req.body.count, 10),
+        };
 
         if (req.file) {
             const params = {
