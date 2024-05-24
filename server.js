@@ -62,8 +62,11 @@ app.post('/api/products', upload.single('image'), (req, res) => {
                 ContentType: req.file.mimetype
             };
 
+            console.log('Uploading to S3 with params:', params);
+
             s3.upload(params, (s3Err, data) => {
                 if (s3Err) {
+                    console.error('Error uploading to S3:', s3Err);
                     return res.status(500).json({ message: 'Error uploading image' });
                 }
                 newProduct.image = data.Location;
@@ -71,6 +74,7 @@ app.post('/api/products', upload.single('image'), (req, res) => {
 
                 fs.writeFile(DATA_FILE, JSON.stringify(products, null, 2), (err) => {
                     if (err) {
+                        console.error('Error writing data:', err);
                         return res.status(500).json({ message: 'Error writing data' });
                     }
                     res.status(201).json(newProduct);
@@ -110,4 +114,3 @@ app.delete('/api/products/:id', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
-
