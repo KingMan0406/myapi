@@ -1,3 +1,6 @@
+// Загрузка переменных среды
+require('dotenv').config();
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -5,7 +8,6 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 const AWS = require('aws-sdk');
-require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -13,7 +15,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(bodyParser.json());
 
-// Set up AWS S3
+// Настройка AWS S3
 const s3 = new AWS.S3({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -25,7 +27,7 @@ const upload = multer({ storage: storage });
 
 const DATA_FILE = path.join(__dirname, 'data.json');
 
-// Ensure DATA_FILE exists
+// Убедитесь, что DATA_FILE существует
 if (!fs.existsSync(DATA_FILE)) {
     fs.writeFileSync(DATA_FILE, JSON.stringify([]));
 }
@@ -42,7 +44,6 @@ app.get('/api/products', (req, res) => {
 });
 
 app.post('/api/products', upload.single('image'), (req, res) => {
-    console.log('Received POST /api/products request');
     fs.readFile(DATA_FILE, (err, data) => {
         if (err) {
             console.error('Error reading data:', err);
@@ -58,7 +59,6 @@ app.post('/api/products', upload.single('image'), (req, res) => {
         };
 
         if (req.file) {
-            console.log('Image file received:', req.file.originalname);
             const params = {
                 Bucket: process.env.S3_BUCKET_NAME,
                 Key: `${Date.now()}-${req.file.originalname}`,
@@ -97,7 +97,6 @@ app.post('/api/products', upload.single('image'), (req, res) => {
 
 app.delete('/api/products/:id', (req, res) => {
     const productId = parseInt(req.params.id, 10);
-    console.log(`Received DELETE /api/products/${productId} request`);
 
     fs.readFile(DATA_FILE, (err, data) => {
         if (err) {
