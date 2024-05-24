@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 const AWS = require('aws-sdk');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -32,6 +33,7 @@ if (!fs.existsSync(DATA_FILE)) {
 app.get('/api/products', (req, res) => {
     fs.readFile(DATA_FILE, (err, data) => {
         if (err) {
+            console.error('Error reading data:', err);
             return res.status(500).json({ message: 'Error reading data' });
         }
         const products = JSON.parse(data);
@@ -40,8 +42,10 @@ app.get('/api/products', (req, res) => {
 });
 
 app.post('/api/products', upload.single('image'), (req, res) => {
+    console.log('Received POST /api/products request');
     fs.readFile(DATA_FILE, (err, data) => {
         if (err) {
+            console.error('Error reading data:', err);
             return res.status(500).json({ message: 'Error reading data' });
         }
         const products = JSON.parse(data);
@@ -54,6 +58,7 @@ app.post('/api/products', upload.single('image'), (req, res) => {
         };
 
         if (req.file) {
+            console.log('Image file received:', req.file.originalname);
             const params = {
                 Bucket: process.env.S3_BUCKET_NAME,
                 Key: `${Date.now()}-${req.file.originalname}`,
@@ -63,6 +68,7 @@ app.post('/api/products', upload.single('image'), (req, res) => {
 
             s3.upload(params, (s3Err, data) => {
                 if (s3Err) {
+                    console.error('Error uploading image:', s3Err);
                     return res.status(500).json({ message: 'Error uploading image' });
                 }
                 newProduct.image = data.Location;
@@ -70,6 +76,7 @@ app.post('/api/products', upload.single('image'), (req, res) => {
 
                 fs.writeFile(DATA_FILE, JSON.stringify(products, null, 2), (err) => {
                     if (err) {
+                        console.error('Error writing data:', err);
                         return res.status(500).json({ message: 'Error writing data' });
                     }
                     res.status(201).json(newProduct);
@@ -79,6 +86,7 @@ app.post('/api/products', upload.single('image'), (req, res) => {
             products.push(newProduct);
             fs.writeFile(DATA_FILE, JSON.stringify(products, null, 2), (err) => {
                 if (err) {
+                    console.error('Error writing data:', err);
                     return res.status(500).json({ message: 'Error writing data' });
                 }
                 res.status(201).json(newProduct);
@@ -89,9 +97,11 @@ app.post('/api/products', upload.single('image'), (req, res) => {
 
 app.delete('/api/products/:id', (req, res) => {
     const productId = parseInt(req.params.id, 10);
+    console.log(`Received DELETE /api/products/${productId} request`);
 
     fs.readFile(DATA_FILE, (err, data) => {
         if (err) {
+            console.error('Error reading data:', err);
             return res.status(500).json({ message: 'Error reading data' });
         }
         let products = JSON.parse(data);
@@ -99,6 +109,7 @@ app.delete('/api/products/:id', (req, res) => {
 
         fs.writeFile(DATA_FILE, JSON.stringify(products, null, 2), (err) => {
             if (err) {
+                console.error('Error writing data:', err);
                 return res.status(500).json({ message: 'Error writing data' });
             }
             res.status(204).end();
