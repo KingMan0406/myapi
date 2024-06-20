@@ -40,7 +40,7 @@ app.get('/api/users', (req, res) => {
     });
 });
 
-app.post('/api/users', upload.single('image'), (req, res) => {
+app.post('/api/users', (req, res) => {
     fs.readFile(DATA_FILE, (err, data) => {
         if (err) {
             return res.status(500).json({ message: 'Error reading data' });
@@ -54,6 +54,9 @@ app.post('/api/users', upload.single('image'), (req, res) => {
             email: req.body.email,
             password: req.body.password,
             position: req.body.position,
+            image: req.body.image,
+            is_logged: req.body.is_logged,
+            money: req.body.money
         };
 
         if (req.file) {
