@@ -1,1 +1,18 @@
-[]
+[
+  {
+    "id": 1,
+    "title": "iPhone 15",
+    "price": 799.99,
+    "description": "Smartphone",
+    "image": "https://example.com/iphone.jpg",
+    "count": 5
+  },
+  {
+    "id": 2,
+    "title": "MacBook Air",
+    "price": 1199.99,
+    "description": "Laptop",
+    "image": "https://example.com/macbook.jpg",
+    "count": 3
+  }
+]
