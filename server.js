@@ -445,7 +445,108 @@ app.delete('/api/products/:id', (req, res) => {
 // ========================================
 // START SERVER
 // ========================================
+app.put('/api/products/:id', upload.single('image'), (req, res) => {
 
+    const productId = parseInt(req.params.id, 10);
+
+    fs.readFile(PRODUCTS_FILE, 'utf8', (err, data) => {
+
+        if (err) {
+            return res.status(500).json({
+                message: 'Error reading products'
+            });
+        }
+
+        let products;
+
+        try {
+            products = JSON.parse(data);
+        } catch (error) {
+            return res.status(500).json({
+                message: 'Invalid products data'
+            });
+        }
+
+        const index = products.findIndex(
+            product => product.id === productId
+        );
+
+        if (index === -1) {
+            return res.status(404).json({
+                message: 'Product not found'
+            });
+        }
+
+        const product = products[index];
+
+        product.title =
+            req.body.title ?? product.title;
+
+        product.price =
+            req.body.price !== undefined
+                ? Number(req.body.price)
+                : product.price;
+
+        product.description =
+            req.body.description ?? product.description;
+
+        product.count =
+            req.body.count !== undefined
+                ? Number(req.body.count)
+                : product.count;
+
+
+        const saveUpdatedProduct = () => {
+
+            products[index] = product;
+
+            fs.writeFile(
+                PRODUCTS_FILE,
+                JSON.stringify(products, null, 2),
+                err => {
+
+                    if (err) {
+                        return res.status(500).json({
+                            message: 'Error writing products'
+                        });
+                    }
+
+                    res.json(product);
+                }
+            );
+        };
+
+
+        if (req.file) {
+
+            const params = {
+                Bucket: process.env.S3_BUCKET_NAME,
+                Key: `products/${Date.now()}-${req.file.originalname}`,
+                Body: req.file.buffer,
+                ContentType: req.file.mimetype
+            };
+
+            s3.upload(params, (s3Err, uploadData) => {
+
+                if (s3Err) {
+                    console.error(s3Err);
+
+                    return res.status(500).json({
+                        message: 'Error uploading image'
+                    });
+                }
+
+                product.image = uploadData.Location;
+
+                saveUpdatedProduct();
+            });
+
+        } else {
+
+            saveUpdatedProduct();
+        }
+    });
+});
 app.listen(PORT, () => {
     console.log(
         `Server is running on port ${PORT}`
